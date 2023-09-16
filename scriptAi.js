@@ -2,8 +2,8 @@ let data = ["", "", "", "", "", "", "", "", ""];
 let count = 0;
 let lock = false;
 
-const toggle = (e, num) => {
-  if (lock || data[num] !== "") {
+const toggle = (cell, num) => {
+  if (lock || cell.textContent !== "") {
     return;
   }
 
@@ -13,19 +13,13 @@ const toggle = (e, num) => {
 
   const img = document.createElement("img");
   img.src = currentImage;
-  e.target.innerHTML = "";
-  e.target.appendChild(img);
+  cell.textContent = "";
+  cell.appendChild(img);
 
   data[num] = currentPlayer;
   count++;
   check();
-
-  // After the player's move, let the AI make a move
-  if (!lock && count % 2 === 1) {
-    setTimeout(() => {
-      makeAIMove();
-    }, 500); // Delay the AI's move for 1 second (adjust as needed)
-  }
+  // makeAIMove();
 };
 
 const check = () => {
@@ -66,36 +60,110 @@ const reset = () => {
 };
 
 const makeAIMove = () => {
-  if (lock) {
-    return;
+  setTimeout(() => {
+    const bestMove = getBestMove(data);
+    if (bestMove !== -1) {
+      toggle(document.querySelector(`.box${bestMove}`), bestMove);
+    }
+  }, 1000); // Delay AI move by 1000 milliseconds (1 second)
+};
+
+
+
+
+const getBestMove = (board) => {
+  let bestMove = -1;
+  let bestScore = -Infinity;
+
+  for (let i = 0; i < board.length; i++) {
+    if (board[i] === "") {
+      board[i] = "O";
+      const score = minimax(board, 0, false);
+      board[i] = "";
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = i;
+      }
+    }
   }
 
-  // Simple AI: Choose a random empty cell
-  const emptyCells = data.reduce((acc, val, index) => {
-    if (val === "") {
-      acc.push(index);
-    }
-    return acc;
-  }, []);
+  return bestMove;
+};
 
-  if (emptyCells.length > 0) {
-    const randomIndex = Math.floor(Math.random() * emptyCells.length);
-    const aiMoveIndex = emptyCells[randomIndex];
-    toggle(
-      document.querySelector(`.boxes[data-num="${aiMoveIndex}"]`),
-      aiMoveIndex
-    );
+const minimax = (board, depth, isMaximizing) => {
+  const scores = {
+    X: -1,
+    O: 1,
+    draw: 0,
+  };
+
+  const winner = checkForWinner(board);
+
+  if (winner !== null) {
+    return scores[winner];
+  }
+
+  if (isMaximizing) {
+    let bestScore = -Infinity;
+    for (let i = 0; i < board.length; i++) {
+      if (board[i] === "") {
+        board[i] = "O";
+        const score = minimax(board, depth + 1, false);
+        board[i] = "";
+        bestScore = Math.max(score, bestScore);
+      }
+    }
+    return bestScore;
+  } else {
+    let bestScore = Infinity;
+    for (let i = 0; i < board.length; i++) {
+      if (board[i] === "") {
+        board[i] = "X";
+        const score = minimax(board, depth + 1, true);
+        board[i] = "";
+        bestScore = Math.min(score, bestScore);
+      }
+    }
+    return bestScore;
   }
 };
 
-// Add event listeners to your game cells
+const checkForWinner = (board) => {
+  const winningCombination = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+
+  for (const combo of winningCombination) {
+    const [a, b, c] = combo;
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+      return board[a];
+    }
+  }
+
+  if (board.includes("")) {
+    return null; // Game still ongoing
+  } else {
+    return "draw"; // It's a draw
+  }
+};
+
 document.querySelectorAll(".boxes").forEach((box, index) => {
-  box.setAttribute("data-num", index);
-  box.addEventListener("click", (e) => toggle(e, index));
+  box.addEventListener("click", (e) => {
+    toggle(e.currentTarget, index);
+    // Move the AI move inside the user's click event
+    makeAIMove();
+  });
 });
 
-// Add a reset button click event listener
-document.querySelector(".reset-button").addEventListener("click", reset);
+// Event listener for the reset button
+document.querySelector(".reset").addEventListener("click", reset);
 
 // Initialize the game
 reset();
