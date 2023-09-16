@@ -68,3 +68,23 @@ body {
 img {
   margin: 50px;
 }
+
+@media screen and (max-width: 1000px){
+  .title{
+    font-size: 30px;
+    margin-bottom: 10px;
+  }
+
+  .board{
+    gap: 5px;
+  }
+
+  .boxes{
+    height: 70px;
+    width: 70px;
+  }
+
+  img{
+    width: 25px;
+  }
+}
